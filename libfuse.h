@@ -7,9 +7,13 @@
 #include <fcntl.h>
 #include <stddef.h>
 
+
+int fuse_pipe[2];
+
 int fuse_read(const char *path, char *buf, size_t size, off_t offset,struct fuse_file_info *fi){
 
-    memcpy(buf, "bbbb\n", 5);
+    char s;
+    read(fuse_pipe[0],&s,1);
     return size;
 }
 
@@ -24,7 +28,7 @@ int fuse_getattr(const char *path, struct stat *stbuf,struct fuse_file_info *fi)
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 2;
     }
-    else if (strcmp(path + 1, "a") == 0)
+    else if (strcmp(path + 1, "a") == 0 || strcmp(path + 1, "b") == 0)
     {
         stbuf->st_mode = S_IFREG | 0444;
         stbuf->st_nlink = 1;
@@ -49,6 +53,7 @@ int fuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     filler(buf, ".", NULL, 0, 0);
     filler(buf, "..", NULL, 0, 0);
     filler(buf, "a", NULL, 0, 0);
+    filler(buf, "b", NULL, 0, 0);
 
     return 0;
 }
