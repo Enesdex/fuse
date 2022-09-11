@@ -1,4 +1,5 @@
 #define FUSE_USE_VERSION 34
+#define FUSE_PATH "/tmp/foo"
 
 #include "fuse.h"
 #include <stdio.h>
@@ -6,7 +7,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stddef.h>
-
 
 int fuse_pipe[2];
 
@@ -56,4 +56,25 @@ int fuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     filler(buf, "b", NULL, 0, 0);
 
     return 0;
+}
+
+static const struct fuse_operations fuse_ops = {
+    .getattr        = fuse_getattr,
+    .readdir        = fuse_readdir,
+    .read           = fuse_read,
+};
+
+char *fargs_fuse[] = {NULL, FUSE_PATH, NULL};
+
+
+void fuse(char **argv){
+    rmdir(FUSE_PATH);
+    mkdir(FUSE_PATH,0777);
+
+    pipe(fuse_pipe);
+    fargs_fuse[0] = argv[0];
+
+    if (!fork()){
+        fuse_main(2,fargs_fuse,&fuse_ops,NULL);
+    }
 }
